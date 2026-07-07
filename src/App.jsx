@@ -6,9 +6,7 @@ import StatusDashboard from './components/StatusDashboard';
 import OfficerDashboard from './components/OfficerDashboard';
 import IssueDetail from './components/IssueDetail';
 import { seedIssues } from './data/mockIssues';
-import { database, storage, isFirebaseReady } from './firebaseClient';
-import { ref, set, onValue } from 'firebase/database';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { supabase, isSupabaseReady, mapDbToIssue, mapIssueToDb } from './supabaseClient';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -17,82 +15,141 @@ function App() {
   const [selectedIssueId, setSelectedIssueId] = useState(null);
   const [issues, setIssues] = useState(seedIssues);
 
-  // 1. Listen to Realtime Database on mount (with automatic seeding if db is empty)
+  // 1. Fetch Issues from Supabase on mount (with automatic seeding if db is empty)
   useEffect(() => {
-    if (!isFirebaseReady) return;
+    if (!isSupabaseReady) return;
 
-    console.log("Firebase RTD configured. Listening to issues path...");
-    const dbIssuesRef = ref(database, 'issues');
-    
-    // Set up real-time listener
-    const unsubscribe = onValue(dbIssuesRef, async (snapshot) => {
-      const val = snapshot.val();
-      
-      if (val) {
-        // Convert keyed object to list
-        const parsedList = Object.values(val);
-        console.log(`Realtime Database updated: fetched ${parsedList.length} issues.`);
-        // Sort issues by reported date descending
-        const sorted = parsedList.sort((a, b) => new Date(b.reportedDate) - new Date(a.reportedDate));
-        setIssues(sorted);
-      } else {
-        // SEEDING: Database is empty, pre-fill with our 9 mock issues
-        console.log("Realtime Database is empty. Seeding database with initial issues...");
-        const seedObj = {};
-        seedIssues.forEach(issue => {
-          seedObj[issue.id] = issue;
-        });
-        
-        await set(dbIssuesRef, seedObj);
-        console.log("Seed data pushed to Realtime Database.");
+    const loadData = async () => {
+      try {
+        console.log("Supabase configured. Attempting to fetch issues...");
+        const { data, error } = await supabase
+          .from('issues')
+          .select(`
+            *,
+            updates (*),
+            duplicates (*)
+          `);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          console.log(`Fetched ${data.length} issues successfully from Supabase.`);
+          const frontendIssues = data.map(mapDbToIssue);
+          // Sort by reported date descending
+          const sorted = frontendIssues.sort((a, b) => new Date(b.reportedDate) - new Date(a.reportedDate));
+          setIssues(sorted);
+        } else {
+          // SEEDING: Database is empty, pre-fill with our 9 mock issues
+          console.log("Supabase database is empty. Auto-seeding with initial civic reports...");
+          
+          for (let issue of seedIssues) {
+            // A. Insert issue row
+            const dbRow = mapIssueToDb(issue);
+            const { error: issueErr } = await supabase.from('issues').insert(dbRow);
+            if (issueErr) console.error("Error seeding issue row:", issueErr);
+
+            // B. Insert updates timeline
+            if (issue.updates && issue.updates.length > 0) {
+              const updatesRows = issue.updates.map(u => ({
+                issue_id: issue.id,
+                status: u.status,
+                date: u.date,
+                note: u.note
+              }));
+              const { error: updErr } = await supabase.from('updates').insert(updatesRows);
+              if (updErr) console.error("Error seeding updates:", updErr);
+            }
+
+            // C. Insert duplicates
+            if (issue.duplicates && issue.duplicates.length > 0) {
+              const dupsRows = issue.duplicates.map(d => ({
+                issue_id: issue.id,
+                reported_date: d.reportedDate,
+                phone: d.phone,
+                note: d.note
+              }));
+              const { error: dupErr } = await supabase.from('duplicates').insert(dupsRows);
+              if (dupErr) console.error("Error seeding duplicates:", dupErr);
+            }
+          }
+
+          // Reload fresh seeded data
+          const { data: freshData, error: reloadErr } = await supabase
+            .from('issues')
+            .select('*, updates(*), duplicates(*)');
+          
+          if (!reloadErr && freshData) {
+            const sortedSeeded = freshData.map(mapDbToIssue).sort((a, b) => new Date(b.reportedDate) - new Date(a.reportedDate));
+            setIssues(sortedSeeded);
+            console.log("Seeding complete. Synced local state with seeded database.");
+          }
+        }
+      } catch (err) {
+        console.error("Supabase integration error (falling back to local memory):", err.message);
       }
-    }, (error) => {
-      console.error("Realtime Database listener error (using local memory):", error.message);
-    });
+    };
 
-    return () => unsubscribe();
+    loadData();
   }, []);
 
-  // Helper: Upload Base64 image to Firebase Storage Bucket 'civic-photos'
-  const uploadBase64ToFirebase = async (base64Data, prefix = 'photo') => {
+  // Helper: Upload Base64 image to Supabase Storage Bucket 'civic-photos'
+  const uploadBase64ToStorage = async (base64Data, prefix = 'photo') => {
     if (!base64Data || !base64Data.startsWith('data:image')) {
       return base64Data; // Already public URL or not a base64 string
     }
 
     try {
-      const filePath = `civic-photos/${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
-      const storeRef = storageRef(storage, filePath);
-      
-      // Upload string using 'data_url' format
-      await uploadString(storeRef, base64Data, 'data_url');
+      const response = await fetch(base64Data);
+      const blob = await response.blob();
+      const extension = blob.type.split('/')[1] || 'jpg';
+      const filePath = `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}.${extension}`;
 
-      // Get public download URL
-      const publicUrl = await getDownloadURL(storeRef);
-      return publicUrl;
+      const { data, error } = await supabase.storage
+        .from('civic-photos')
+        .upload(filePath, blob, { contentType: blob.type });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('civic-photos')
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
     } catch (err) {
-      console.error("Firebase storage upload failed (using base64 inline fallback):", err);
+      console.error("Storage upload failed (using base64 inline fallback):", err);
       return base64Data;
     }
   };
 
-  // 2. State-change Interceptor: Sync local changes to remote Realtime Database
-  const syncStateToFirebase = async (prevIssues, nextIssues) => {
-    if (!isFirebaseReady) return;
+  // 2. State-change Interceptor: Sync local changes to remote database
+  const syncStateToSupabase = async (prevIssues, nextIssues) => {
+    if (!isSupabaseReady) return;
 
     // A. Sync new ticket creation
     if (nextIssues.length > prevIssues.length) {
       const addedIssues = nextIssues.filter(n => !prevIssues.some(p => p.id === n.id));
       for (let issue of addedIssues) {
         try {
-          console.log(`Uploading file and writing new issue ${issue.id} to Realtime Database...`);
-          // 1. Upload photo to Firebase Storage
-          const publicUrl = await uploadBase64ToFirebase(issue.photoUrlBefore, 'before');
+          console.log(`Uploading files and writing new issue ${issue.id} to Supabase...`);
+          // 1. Upload photo to storage
+          const publicUrl = await uploadBase64ToStorage(issue.photoUrlBefore, 'before');
           const issueWithUrl = { ...issue, photoUrlBefore: publicUrl };
 
-          // 2. Write details to database: /issues/THN-XXXX
-          await set(ref(database, `issues/${issue.id}`), issueWithUrl);
+          // 2. Insert into issues table
+          const dbRow = mapIssueToDb(issueWithUrl);
+          await supabase.from('issues').insert(dbRow);
+
+          // 3. Insert initial updates logs
+          for (let u of issue.updates) {
+            await supabase.from('updates').insert({
+              issue_id: issue.id,
+              status: u.status,
+              date: u.date,
+              note: u.note
+            });
+          }
         } catch (err) {
-          console.error("Error creating remote Realtime DB ticket:", err);
+          console.error("Error creating remote ticket:", err);
         }
       }
       return;
@@ -110,20 +167,52 @@ function App() {
 
       if (statusChanged || officerChanged || afterPhotoChanged || duplicatesCountChanged) {
         try {
-          console.log(`Syncing modifications for issue ${nextIssue.id} to Realtime Database...`);
+          console.log(`Syncing modifications for issue ${nextIssue.id} to Supabase...`);
 
           // 1. Upload "after" photo if newly updated
           let afterUrl = nextIssue.photoUrlAfter;
           if (afterPhotoChanged && nextIssue.photoUrlAfter && nextIssue.photoUrlAfter.startsWith('data:image')) {
-            afterUrl = await uploadBase64ToFirebase(nextIssue.photoUrlAfter, 'after');
+            afterUrl = await uploadBase64ToStorage(nextIssue.photoUrlAfter, 'after');
           }
 
           const issueWithUrl = { ...nextIssue, photoUrlAfter: afterUrl };
 
-          // 2. Overwrite issue key with updated details
-          await set(ref(database, `issues/${nextIssue.id}`), issueWithUrl);
+          // 2. Update issue row
+          const dbRow = mapIssueToDb(issueWithUrl);
+          await supabase
+            .from('issues')
+            .update(dbRow)
+            .eq('id', nextIssue.id);
+
+          // 3. Write new updates entries
+          const newUpdates = (nextIssue.updates || []).filter(nu => 
+            !(prevIssue.updates || []).some(pu => pu.note === nu.note && pu.status === nu.status)
+          );
+          for (let u of newUpdates) {
+            await supabase.from('updates').insert({
+              issue_id: nextIssue.id,
+              status: u.status,
+              date: u.date,
+              note: u.note
+            });
+          }
+
+          // 4. Write new duplicates entries
+          if (duplicatesCountChanged) {
+            const newDups = (nextIssue.duplicates || []).filter(nd => 
+              !(prevIssue.duplicates || []).some(pd => pd.phone === nd.phone && pd.reportedDate === nd.reportedDate)
+            );
+            for (let d of newDups) {
+              await supabase.from('duplicates').insert({
+                issue_id: nextIssue.id,
+                reported_date: d.reportedDate,
+                phone: d.phone,
+                note: d.note
+              });
+            }
+          }
         } catch (err) {
-          console.error(`Error updating Realtime DB issue ${nextIssue.id}:`, err);
+          console.error(`Error updating issue ${nextIssue.id}:`, err);
         }
       }
     }
@@ -133,7 +222,7 @@ function App() {
   const updateIssuesAndSync = (newIssuesOrFn) => {
     setIssues(prevIssues => {
       const nextIssues = typeof newIssuesOrFn === 'function' ? newIssuesOrFn(prevIssues) : newIssuesOrFn;
-      syncStateToFirebase(prevIssues, nextIssues);
+      syncStateToSupabase(prevIssues, nextIssues);
       return nextIssues;
     });
   };

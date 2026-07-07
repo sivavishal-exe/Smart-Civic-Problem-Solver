@@ -5,16 +5,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 const isKeyConfigured = supabaseAnonKey && supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY';
 
-if (!isKeyConfigured) {
-  console.warn(
-    "⚠️ Supabase Anon Key is not configured yet. The application will run in Mock/Offline demo mode using local seed data. " +
-    "To enable full live database integration, replace VITE_SUPABASE_ANON_KEY in your .env file with your actual Supabase Anon key."
-  );
-}
-
 export const isSupabaseReady = isKeyConfigured;
 
-// Initialize client
+// Initialize Supabase Client
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder'
