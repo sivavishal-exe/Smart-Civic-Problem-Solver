@@ -2,13 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
 
-// Your Firebase credentials (Project ID, DB URL, and domains are pre-configured!)
+// Your Firebase credentials (Project ID, DB URL, domains, and Sender ID are pre-configured!)
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY", // Replace with your Web API Key from Firebase General settings
   authDomain: "smart-civic-problem-solver.firebaseapp.com",
   projectId: "smart-civic-problem-solver",
   storageBucket: "smart-civic-problem-solver.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID", // Replace if messaging/notifications are added
+  messagingSenderId: "903103371650",
   appId: "YOUR_APP_ID", // Replace with your App ID (e.g. 1:12345:web:abcd...)
   databaseURL: "https://smart-civic-problem-solver-default-rtdb.firebaseio.com/"
 };
@@ -19,7 +19,7 @@ const isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_AP
 if (!isConfigured) {
   console.warn(
     "⚠️ Firebase configuration is not set yet. The application will run in Mock/Offline mode using local seed data. " +
-    "To connect your live database, replace the config object in src/firebaseClient.js with your real Firebase keys."
+    "To enable full live database integration, replace VITE_SUPABASE_ANON_KEY in your .env file with your actual Supabase Anon key."
   );
 }
 
