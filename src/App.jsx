@@ -6,7 +6,9 @@ import StatusDashboard from './components/StatusDashboard';
 import OfficerDashboard from './components/OfficerDashboard';
 import IssueDetail from './components/IssueDetail';
 import { seedIssues } from './data/mockIssues';
-import { supabase, isSupabaseReady, mapDbToIssue, mapIssueToDb } from './supabaseClient';
+import { db, storage, isFirebaseReady } from './firebaseClient';
+import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -15,144 +17,97 @@ function App() {
   const [selectedIssueId, setSelectedIssueId] = useState(null);
   const [issues, setIssues] = useState(seedIssues);
 
-  // 1. Fetch Issues from Supabase on mount (with automatic seeding if db is empty)
+  // 1. Fetch Issues from Firestore on mount (with automatic seeding if db is empty)
   useEffect(() => {
-    if (!isSupabaseReady) return;
+    if (!isFirebaseReady) return;
 
     const loadData = async () => {
       try {
-        console.log("Supabase configured. Attempting to fetch issues...");
-        const { data, error } = await supabase
-          .from('issues')
-          .select(`
-            *,
-            updates (*),
-            duplicates (*)
-          `);
-
-        if (error) throw error;
+        console.log("Firebase configured. Attempting to fetch issues from Firestore...");
+        const querySnapshot = await getDocs(collection(db, 'issues'));
+        const data = [];
+        querySnapshot.forEach((doc) => {
+          data.push(doc.data());
+        });
 
         if (data && data.length > 0) {
-          console.log(`Fetched ${data.length} issues successfully from Supabase.`);
-          const frontendIssues = data.map(mapDbToIssue);
-          setIssues(frontendIssues);
+          console.log(`Fetched ${data.length} issues successfully from Firestore.`);
+          // Sort issues by reported date descending
+          const sorted = data.sort((a, b) => new Date(b.reportedDate) - new Date(a.reportedDate));
+          setIssues(sorted);
         } else {
           // SEEDING: Database is empty, pre-fill with our 9 mock issues
-          console.log("Supabase database is empty. Auto-seeding with initial civic reports...");
+          console.log("Firestore database is empty. Seeding database with initial issues...");
           
           for (let issue of seedIssues) {
-            // A. Insert issue row
-            const dbRow = mapIssueToDb(issue);
-            const { error: issueErr } = await supabase.from('issues').insert(dbRow);
-            if (issueErr) console.error("Error seeding issue row:", issueErr);
-
-            // B. Insert updates timeline
-            if (issue.updates && issue.updates.length > 0) {
-              const updatesRows = issue.updates.map(u => ({
-                issue_id: issue.id,
-                status: u.status,
-                date: u.date,
-                note: u.note
-              }));
-              const { error: updErr } = await supabase.from('updates').insert(updatesRows);
-              if (updErr) console.error("Error seeding updates:", updErr);
-            }
-
-            // C. Insert duplicates
-            if (issue.duplicates && issue.duplicates.length > 0) {
-              const dupsRows = issue.duplicates.map(d => ({
-                issue_id: issue.id,
-                reported_date: d.reportedDate,
-                phone: d.phone,
-                note: d.note
-              }));
-              const { error: dupErr } = await supabase.from('duplicates').insert(dupsRows);
-              if (dupErr) console.error("Error seeding duplicates:", dupErr);
-            }
+            await setDoc(doc(db, 'issues', issue.id), issue);
           }
 
           // Reload fresh seeded data
-          const { data: freshData, error: reloadErr } = await supabase
-            .from('issues')
-            .select('*, updates(*), duplicates(*)');
+          const freshSnapshot = await getDocs(collection(db, 'issues'));
+          const freshData = [];
+          freshSnapshot.forEach((doc) => {
+            freshData.push(doc.data());
+          });
           
-          if (!reloadErr && freshData) {
-            setIssues(freshData.map(mapDbToIssue));
-            console.log("Seeding complete. Synced local state with seeded database.");
-          }
+          const sortedSeeded = freshData.sort((a, b) => new Date(b.reportedDate) - new Date(a.reportedDate));
+          setIssues(sortedSeeded);
+          console.log("Seeding complete. Synced local state with Firestore.");
         }
       } catch (err) {
-        console.error("Supabase integration error (falling back to local memory):", err.message);
+        console.error("Firestore integration error (falling back to local memory):", err.message);
       }
     };
 
     loadData();
   }, []);
 
-  // Helper: Upload Base64 image to Supabase Storage Bucket 'civic-photos'
-  const uploadBase64ToStorage = async (base64Data, prefix = 'photo') => {
+  // Helper: Upload Base64 image to Firebase Storage Bucket 'civic-photos'
+  const uploadBase64ToFirebase = async (base64Data, prefix = 'photo') => {
     if (!base64Data || !base64Data.startsWith('data:image')) {
       return base64Data; // Already public URL or not a base64 string
     }
 
     try {
-      const response = await fetch(base64Data);
-      const blob = await response.blob();
-      const extension = blob.type.split('/')[1] || 'jpg';
-      const filePath = `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}.${extension}`;
+      const filePath = `civic-photos/${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
+      const storageRef = ref(storage, filePath);
+      
+      // Upload string using 'data_url' format
+      await uploadString(storageRef, base64Data, 'data_url');
 
-      const { data, error } = await supabase.storage
-        .from('civic-photos')
-        .upload(filePath, blob, { contentType: blob.type });
-
-      if (error) throw error;
-
-      const { data: urlData } = supabase.storage
-        .from('civic-photos')
-        .getPublicUrl(filePath);
-
-      return urlData.publicUrl;
+      // Get public download URL
+      const publicUrl = await getDownloadURL(storageRef);
+      return publicUrl;
     } catch (err) {
-      console.error("Storage upload failed (using base64 inline fallback):", err);
+      console.error("Firebase storage upload failed (using base64 inline fallback):", err);
       return base64Data;
     }
   };
 
-  // 2. State-change Interceptor: Sync local changes to remote database
-  const syncStateToSupabase = async (prevIssues, nextIssues) => {
-    if (!isSupabaseReady) return;
+  // 2. State-change Interceptor: Sync local changes to remote Firestore database
+  const syncStateToFirebase = async (prevIssues, nextIssues) => {
+    if (!isFirebaseReady) return;
 
     // A. Sync new ticket creation
     if (nextIssues.length > prevIssues.length) {
       const addedIssues = nextIssues.filter(n => !prevIssues.some(p => p.id === n.id));
       for (let issue of addedIssues) {
         try {
-          console.log(`Uploading files and writing new issue ${issue.id} to Supabase...`);
-          // 1. Upload photo to storage
-          const publicUrl = await uploadBase64ToStorage(issue.photoUrlBefore, 'before');
+          console.log(`Uploading file and writing new issue ${issue.id} to Firestore...`);
+          // 1. Upload photo to Firebase Storage
+          const publicUrl = await uploadBase64ToFirebase(issue.photoUrlBefore, 'before');
           const issueWithUrl = { ...issue, photoUrlBefore: publicUrl };
 
-          // 2. Insert into issues table
-          const dbRow = mapIssueToDb(issueWithUrl);
-          await supabase.from('issues').insert(dbRow);
-
-          // 3. Insert initial updates logs
-          for (let u of issue.updates) {
-            await supabase.from('updates').insert({
-              issue_id: issue.id,
-              status: u.status,
-              date: u.date,
-              note: u.note
-            });
-          }
+          // 2. Write document to 'issues' collection
+          await setDoc(doc(db, 'issues', issue.id), issueWithUrl);
         } catch (err) {
-          console.error("Error creating remote ticket:", err);
+          console.error("Error creating remote Firestore ticket:", err);
         }
       }
       return;
     }
 
-    // B. Sync updates, status changes, or duplicate merges
+    // B. Sync modifications, status changes, or duplicate merges
     for (let nextIssue of nextIssues) {
       const prevIssue = prevIssues.find(p => p.id === nextIssue.id);
       if (!prevIssue) continue;
@@ -164,52 +119,20 @@ function App() {
 
       if (statusChanged || officerChanged || afterPhotoChanged || duplicatesCountChanged) {
         try {
-          console.log(`Syncing modifications for issue ${nextIssue.id} to Supabase...`);
+          console.log(`Syncing modifications for issue ${nextIssue.id} to Firestore...`);
 
           // 1. Upload "after" photo if newly updated
           let afterUrl = nextIssue.photoUrlAfter;
           if (afterPhotoChanged && nextIssue.photoUrlAfter && nextIssue.photoUrlAfter.startsWith('data:image')) {
-            afterUrl = await uploadBase64ToStorage(nextIssue.photoUrlAfter, 'after');
+            afterUrl = await uploadBase64ToFirebase(nextIssue.photoUrlAfter, 'after');
           }
 
           const issueWithUrl = { ...nextIssue, photoUrlAfter: afterUrl };
 
-          // 2. Update issue row
-          const dbRow = mapIssueToDb(issueWithUrl);
-          await supabase
-            .from('issues')
-            .update(dbRow)
-            .eq('id', nextIssue.id);
-
-          // 3. Write new updates entries
-          const newUpdates = (nextIssue.updates || []).filter(nu => 
-            !(prevIssue.updates || []).some(pu => pu.note === nu.note && pu.status === nu.status)
-          );
-          for (let u of newUpdates) {
-            await supabase.from('updates').insert({
-              issue_id: nextIssue.id,
-              status: u.status,
-              date: u.date,
-              note: u.note
-            });
-          }
-
-          // 4. Write new duplicates entries
-          if (duplicatesCountChanged) {
-            const newDups = (nextIssue.duplicates || []).filter(nd => 
-              !(prevIssue.duplicates || []).some(pd => pd.phone === nd.phone && pd.reportedDate === nd.reportedDate)
-            );
-            for (let d of newDups) {
-              await supabase.from('duplicates').insert({
-                issue_id: nextIssue.id,
-                reported_date: d.reportedDate,
-                phone: d.phone,
-                note: d.note
-              });
-            }
-          }
+          // 2. Overwrite/Update issue document
+          await setDoc(doc(db, 'issues', nextIssue.id), issueWithUrl);
         } catch (err) {
-          console.error(`Error updating issue ${nextIssue.id}:`, err);
+          console.error(`Error updating Firestore issue ${nextIssue.id}:`, err);
         }
       }
     }
@@ -219,7 +142,7 @@ function App() {
   const updateIssuesAndSync = (newIssuesOrFn) => {
     setIssues(prevIssues => {
       const nextIssues = typeof newIssuesOrFn === 'function' ? newIssuesOrFn(prevIssues) : newIssuesOrFn;
-      syncStateToSupabase(prevIssues, nextIssues);
+      syncStateToFirebase(prevIssues, nextIssues);
       return nextIssues;
     });
   };
@@ -306,22 +229,22 @@ function App() {
             <h4 className="text-white font-bold text-sm tracking-wider uppercase">Quick Links / இணைப்புகள்</h4>
             <ul className="text-xs space-y-2">
               <li>
-                <button onClick={() => setCurrentScreen('landing')} className="hover:text-tngreen-400 transition-colors">
+                <button onClick={() => setCurrentScreen('landing')} className="hover:text-tngreen-450 transition-colors">
                   Home / முகப்பு
                 </button>
               </li>
               <li>
-                <button onClick={() => setCurrentScreen('dashboard')} className="hover:text-tngreen-400 transition-colors">
+                <button onClick={() => setCurrentScreen('dashboard')} className="hover:text-tngreen-450 transition-colors">
                   Live Public Map / வரைபடம்
                 </button>
               </li>
               <li>
-                <button onClick={() => setCurrentScreen('report')} className="hover:text-tngreen-400 transition-colors">
+                <button onClick={() => setCurrentScreen('report')} className="hover:text-tngreen-450 transition-colors">
                   Report Civic Issue / புகார் செய்ய
                 </button>
               </li>
               <li>
-                <button onClick={() => setCurrentScreen('officer')} className="hover:text-tngreen-400 transition-colors">
+                <button onClick={() => setCurrentScreen('officer')} className="hover:text-tngreen-450 transition-colors">
                   Officer Portal / அதிகாரிகள் பக்கம்
                 </button>
               </li>
