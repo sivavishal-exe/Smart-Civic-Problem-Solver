@@ -6,9 +6,9 @@ import StatusDashboard from './components/StatusDashboard';
 import OfficerDashboard from './components/OfficerDashboard';
 import IssueDetail from './components/IssueDetail';
 import { seedIssues } from './data/mockIssues';
-import { db, storage, isFirebaseReady } from './firebaseClient';
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { database, storage, isFirebaseReady } from './firebaseClient';
+import { ref, set, onValue } from 'firebase/database';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -17,49 +17,40 @@ function App() {
   const [selectedIssueId, setSelectedIssueId] = useState(null);
   const [issues, setIssues] = useState(seedIssues);
 
-  // 1. Fetch Issues from Firestore on mount (with automatic seeding if db is empty)
+  // 1. Listen to Realtime Database on mount (with automatic seeding if db is empty)
   useEffect(() => {
     if (!isFirebaseReady) return;
 
-    const loadData = async () => {
-      try {
-        console.log("Firebase configured. Attempting to fetch issues from Firestore...");
-        const querySnapshot = await getDocs(collection(db, 'issues'));
-        const data = [];
-        querySnapshot.forEach((doc) => {
-          data.push(doc.data());
+    console.log("Firebase RTD configured. Listening to issues path...");
+    const dbIssuesRef = ref(database, 'issues');
+    
+    // Set up real-time listener
+    const unsubscribe = onValue(dbIssuesRef, async (snapshot) => {
+      const val = snapshot.val();
+      
+      if (val) {
+        // Convert keyed object to list
+        const parsedList = Object.values(val);
+        console.log(`Realtime Database updated: fetched ${parsedList.length} issues.`);
+        // Sort issues by reported date descending
+        const sorted = parsedList.sort((a, b) => new Date(b.reportedDate) - new Date(a.reportedDate));
+        setIssues(sorted);
+      } else {
+        // SEEDING: Database is empty, pre-fill with our 9 mock issues
+        console.log("Realtime Database is empty. Seeding database with initial issues...");
+        const seedObj = {};
+        seedIssues.forEach(issue => {
+          seedObj[issue.id] = issue;
         });
-
-        if (data && data.length > 0) {
-          console.log(`Fetched ${data.length} issues successfully from Firestore.`);
-          // Sort issues by reported date descending
-          const sorted = data.sort((a, b) => new Date(b.reportedDate) - new Date(a.reportedDate));
-          setIssues(sorted);
-        } else {
-          // SEEDING: Database is empty, pre-fill with our 9 mock issues
-          console.log("Firestore database is empty. Seeding database with initial issues...");
-          
-          for (let issue of seedIssues) {
-            await setDoc(doc(db, 'issues', issue.id), issue);
-          }
-
-          // Reload fresh seeded data
-          const freshSnapshot = await getDocs(collection(db, 'issues'));
-          const freshData = [];
-          freshSnapshot.forEach((doc) => {
-            freshData.push(doc.data());
-          });
-          
-          const sortedSeeded = freshData.sort((a, b) => new Date(b.reportedDate) - new Date(a.reportedDate));
-          setIssues(sortedSeeded);
-          console.log("Seeding complete. Synced local state with Firestore.");
-        }
-      } catch (err) {
-        console.error("Firestore integration error (falling back to local memory):", err.message);
+        
+        await set(dbIssuesRef, seedObj);
+        console.log("Seed data pushed to Realtime Database.");
       }
-    };
+    }, (error) => {
+      console.error("Realtime Database listener error (using local memory):", error.message);
+    });
 
-    loadData();
+    return () => unsubscribe();
   }, []);
 
   // Helper: Upload Base64 image to Firebase Storage Bucket 'civic-photos'
@@ -70,13 +61,13 @@ function App() {
 
     try {
       const filePath = `civic-photos/${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
-      const storageRef = ref(storage, filePath);
+      const storeRef = storageRef(storage, filePath);
       
       // Upload string using 'data_url' format
-      await uploadString(storageRef, base64Data, 'data_url');
+      await uploadString(storeRef, base64Data, 'data_url');
 
       // Get public download URL
-      const publicUrl = await getDownloadURL(storageRef);
+      const publicUrl = await getDownloadURL(storeRef);
       return publicUrl;
     } catch (err) {
       console.error("Firebase storage upload failed (using base64 inline fallback):", err);
@@ -84,7 +75,7 @@ function App() {
     }
   };
 
-  // 2. State-change Interceptor: Sync local changes to remote Firestore database
+  // 2. State-change Interceptor: Sync local changes to remote Realtime Database
   const syncStateToFirebase = async (prevIssues, nextIssues) => {
     if (!isFirebaseReady) return;
 
@@ -93,15 +84,15 @@ function App() {
       const addedIssues = nextIssues.filter(n => !prevIssues.some(p => p.id === n.id));
       for (let issue of addedIssues) {
         try {
-          console.log(`Uploading file and writing new issue ${issue.id} to Firestore...`);
+          console.log(`Uploading file and writing new issue ${issue.id} to Realtime Database...`);
           // 1. Upload photo to Firebase Storage
           const publicUrl = await uploadBase64ToFirebase(issue.photoUrlBefore, 'before');
           const issueWithUrl = { ...issue, photoUrlBefore: publicUrl };
 
-          // 2. Write document to 'issues' collection
-          await setDoc(doc(db, 'issues', issue.id), issueWithUrl);
+          // 2. Write details to database: /issues/THN-XXXX
+          await set(ref(database, `issues/${issue.id}`), issueWithUrl);
         } catch (err) {
-          console.error("Error creating remote Firestore ticket:", err);
+          console.error("Error creating remote Realtime DB ticket:", err);
         }
       }
       return;
@@ -119,7 +110,7 @@ function App() {
 
       if (statusChanged || officerChanged || afterPhotoChanged || duplicatesCountChanged) {
         try {
-          console.log(`Syncing modifications for issue ${nextIssue.id} to Firestore...`);
+          console.log(`Syncing modifications for issue ${nextIssue.id} to Realtime Database...`);
 
           // 1. Upload "after" photo if newly updated
           let afterUrl = nextIssue.photoUrlAfter;
@@ -129,10 +120,10 @@ function App() {
 
           const issueWithUrl = { ...nextIssue, photoUrlAfter: afterUrl };
 
-          // 2. Overwrite/Update issue document
-          await setDoc(doc(db, 'issues', nextIssue.id), issueWithUrl);
+          // 2. Overwrite issue key with updated details
+          await set(ref(database, `issues/${nextIssue.id}`), issueWithUrl);
         } catch (err) {
-          console.error(`Error updating Firestore issue ${nextIssue.id}:`, err);
+          console.error(`Error updating Realtime DB issue ${nextIssue.id}:`, err);
         }
       }
     }
