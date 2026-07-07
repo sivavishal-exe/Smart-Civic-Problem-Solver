@@ -279,45 +279,45 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
   if (successResult) {
     return (
       <div className="max-w-xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-tngreen-50 text-tngreen-600 rounded-full mb-6">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl p-8 text-center transition-colors duration-250">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-tngreen-50 dark:bg-tngreen-950/40 text-tngreen-600 dark:text-tngreen-450 rounded-full mb-6">
             <CheckCircle className="w-10 h-10" />
           </div>
 
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
             Report Submitted / பதிவு செய்யப்பட்டது
           </h2>
-          <p className="text-slate-500 mb-6 font-medium text-sm">
+          <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium text-sm">
             Thank you. Your civic complaint has been registered in the Smart Theni database.
           </p>
 
-          <div className="bg-slate-50 rounded-2xl border border-slate-100 p-6 text-left mb-8 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-              <span className="text-xs font-semibold text-slate-500">ISSUE ID</span>
-              <span className="font-mono font-bold text-tnblue-800 text-base">{successResult.issueId}</span>
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 text-left mb-8 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-450">ISSUE ID</span>
+              <span className="font-mono font-bold text-tnblue-800 dark:text-tnblue-300 text-base">{successResult.issueId}</span>
             </div>
             
-            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-              <span className="text-xs font-semibold text-slate-500">CATEGORY</span>
-              <span className="text-sm font-bold text-slate-800">{CATEGORIES[successResult.category]?.label.split(' / ')[0]}</span>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-450">CATEGORY</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{CATEGORIES[successResult.category]?.label.split(' / ')[0]}</span>
             </div>
 
-            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-              <span className="text-xs font-semibold text-slate-500">WARD & VILLAGE</span>
-              <span className="text-sm font-bold text-slate-800">{successResult.ward} ({WARD_OFFICERS[successResult.ward]?.split(' ')[1] || 'Theni Central'})</span>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-450">WARD & VILLAGE</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{successResult.ward} ({WARD_OFFICERS[successResult.ward]?.split(' ')[1] || 'Theni Central'})</span>
             </div>
 
-            <div className="text-xs text-slate-500">
-              <span className="font-semibold block mb-0.5">LOCATION</span>
-              <span className="font-medium text-slate-700">{successResult.address}</span>
+            <div className="text-xs text-slate-555">
+              <span className="font-semibold text-slate-500 dark:text-slate-450 block mb-0.5">LOCATION</span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">{successResult.address}</span>
             </div>
 
             {successResult.type === 'duplicate' && (
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-3.5 flex items-start space-x-2.5 mt-2">
+              <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3.5 flex items-start space-x-2.5 mt-2">
                 <ShieldAlert className="w-5 h-5 text-orange-650 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-xs text-orange-850">Duplicate Match Detected!</h4>
-                  <p className="text-[11px] text-orange-700 mt-0.5 leading-relaxed">
+                  <h4 className="font-bold text-xs text-orange-850 dark:text-orange-300">Duplicate Match Detected!</h4>
+                  <p className="text-[11px] text-orange-700 dark:text-orange-400 mt-0.5 leading-relaxed">
                     This matches an existing open issue in the same category within 50 meters. To increase resolution priority, we have merged your complaint with <strong>{successResult.issueId}</strong> (total {successResult.matches} citizen reports).
                   </p>
                 </div>
@@ -325,11 +325,11 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
             )}
 
             {successResult.type === 'new' && (
-              <div className="bg-tngreen-50 border border-tngreen-200 rounded-xl p-3.5 flex items-start space-x-2.5 mt-2">
+              <div className="bg-tngreen-50 dark:bg-tngreen-950/20 border border-tngreen-200 dark:border-tngreen-900/50 rounded-xl p-3.5 flex items-start space-x-2.5 mt-2">
                 <Check className="w-5 h-5 text-tngreen-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-xs text-tngreen-800">Unique Report Logged</h4>
-                  <p className="text-[11px] text-tngreen-700 mt-0.5 leading-relaxed">
+                  <h4 className="font-bold text-xs text-tngreen-800 dark:text-tngreen-300">Unique Report Logged</h4>
+                  <p className="text-[11px] text-tngreen-700 dark:text-tngreen-450 mt-0.5 leading-relaxed">
                     No active duplicates were found nearby. A new worker request has been created and logged. Assigned Ward Officers will review it shortly.
                   </p>
                 </div>
@@ -351,7 +351,7 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
             
             <button
               onClick={handleReset}
-              className="py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all duration-150"
+              className="py-3 px-6 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-all duration-150"
             >
               File Another Report
             </button>
@@ -364,25 +364,25 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Report a Civic Problem / புகார் அளிக்கவும்</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Report a Civic Problem / புகார் அளிக்கவும்</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
           Upload a photo, pinpoint the location, and submit it. Our system routes it to the local ward officer.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-slate-800 dark:text-slate-200">
         
         {/* Left Side: Form Details (2 columns) */}
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
           
           {/* Photo Upload Card */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-md">
-            <label className="block text-sm font-extrabold text-slate-800 mb-3">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-md transition-colors duration-250">
+            <label className="block text-sm font-extrabold text-slate-800 dark:text-slate-250 mb-3">
               1. Upload Photo / புகைப்படம் பதிவேற்றவும் <span className="text-red-500">*</span>
             </label>
             
             {!photo ? (
-              <div className="border-2 border-dashed border-slate-350 hover:border-tnblue-400 rounded-xl p-8 text-center cursor-pointer transition-colors duration-150 relative">
+              <div className="border-2 border-dashed border-slate-350 dark:border-slate-700 hover:border-tnblue-400 dark:hover:border-tnblue-500 rounded-xl p-8 text-center cursor-pointer transition-colors duration-150 relative">
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -391,16 +391,16 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
                   required
                 />
                 <div className="flex flex-col items-center justify-center">
-                  <div className="bg-slate-100 p-4 rounded-full text-slate-500 mb-3">
+                  <div className="bg-slate-100 dark:bg-slate-900 p-4 rounded-full text-slate-500 dark:text-slate-400 mb-3">
                     <Upload className="h-8 w-8" />
                   </div>
-                  <p className="text-sm font-bold text-slate-700">Drag & Drop photo here, or browse</p>
-                  <p className="text-xs text-slate-400 mt-1">Supports camera snapshot or image file upload</p>
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Drag & Drop photo here, or browse</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Supports camera snapshot or image file upload</p>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 aspect-video max-h-64 bg-slate-100">
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-video max-h-64 bg-slate-100 dark:bg-slate-700">
                   <img src={photo} alt="Civic problem preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
@@ -414,26 +414,26 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
                 
                 {/* AI Scanning Status */}
                 {isScanning && (
-                  <div className="bg-tnblue-50 border border-tnblue-200 rounded-xl p-4 flex items-center space-x-3 justify-center animate-pulse">
-                    <RefreshCw className="h-5 w-5 text-tnblue-700 animate-spin" />
-                    <span className="text-sm font-semibold text-tnblue-900">AI scanning image for categories...</span>
+                  <div className="bg-tnblue-50 dark:bg-tnblue-950/30 border border-tnblue-200 dark:border-tnblue-900/50 rounded-xl p-4 flex items-center space-x-3 justify-center animate-pulse">
+                    <RefreshCw className="h-5 w-5 text-tnblue-700 dark:text-tnblue-450 animate-spin" />
+                    <span className="text-sm font-semibold text-tnblue-900 dark:text-tnblue-300">AI scanning image for categories...</span>
                   </div>
                 )}
-
+ 
                 {/* AI Category Detected Badge */}
                 {aiResult && !isScanning && (
-                  <div className="bg-tngreen-50 border border-tngreen-200 rounded-xl p-4 flex items-start space-x-3">
-                    <div className="bg-tngreen-100 text-tngreen-700 p-2 rounded-full">
+                  <div className="bg-tngreen-50 dark:bg-tngreen-950/30 border border-tngreen-200 dark:border-tngreen-900/50 rounded-xl p-4 flex items-start space-x-3">
+                    <div className="bg-tngreen-100 dark:bg-tngreen-900 text-tngreen-700 dark:text-tngreen-300 p-2 rounded-full">
                       <Brain className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-sm text-tngreen-900 flex items-center gap-1.5">
+                      <h4 className="font-extrabold text-sm text-tngreen-900 dark:text-white flex items-center gap-1.5">
                         AI Categorization Complete
-                        <span className="bg-tngreen-200 text-tngreen-800 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                        <span className="bg-tngreen-200 dark:bg-tngreen-800 text-tngreen-800 dark:text-tngreen-100 text-[10px] px-1.5 py-0.5 rounded font-bold">
                           {aiResult.confidence}% Match
                         </span>
                       </h4>
-                      <p className="text-xs text-tngreen-700 mt-0.5">
+                      <p className="text-xs text-tngreen-700 dark:text-tngreen-450 mt-0.5">
                         Identified as <strong>{CATEGORIES[aiResult.category]?.label.split(' / ')[0]}</strong>. You can manually adjust the category below if incorrect.
                       </p>
                     </div>
@@ -444,15 +444,15 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
           </div>
 
           {/* Location Picker Card */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-md space-y-4">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-md space-y-4 transition-colors duration-250">
             <div className="flex justify-between items-center">
-              <label className="block text-sm font-extrabold text-slate-800">
+              <label className="block text-sm font-extrabold text-slate-800 dark:text-slate-205">
                 2. Pinpoint Location / இடம் <span className="text-red-500">*</span>
               </label>
               <button
                 type="button"
                 onClick={handleLocateMe}
-                className="text-xs font-bold text-tnblue-700 hover:text-tnblue-900 flex items-center gap-1 bg-tnblue-50 px-2.5 py-1.5 rounded-lg border border-tnblue-100 transition-colors"
+                className="text-xs font-bold text-tnblue-700 dark:text-tnblue-300 hover:text-tnblue-900 dark:hover:text-tnblue-200 flex items-center gap-1 bg-tnblue-50 dark:bg-tnblue-950/40 px-2.5 py-1.5 rounded-lg border border-tnblue-100 dark:border-tnblue-900/50 transition-colors"
               >
                 <MapPin className="h-3.5 w-3.5" />
                 <span>Use My GPS / என் இடம்</span>
@@ -460,13 +460,13 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
             </div>
 
             {/* Address bar */}
-            <div className="text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-2">
-              <MapPin className="text-slate-400 h-4.5 w-4.5 flex-shrink-0" />
+            <div className="text-xs font-bold text-slate-650 dark:text-slate-350 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex items-center gap-2">
+              <MapPin className="text-slate-400 dark:text-slate-500 h-4.5 w-4.5 flex-shrink-0" />
               <span className="truncate">{address}</span>
             </div>
 
             {/* Small leaflet map to click/drag marker */}
-            <div className="h-56 w-full rounded-xl overflow-hidden border border-slate-200 relative">
+            <div className="h-56 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative z-10">
               <MapContainer 
                 center={location} 
                 zoom={14} 
@@ -477,20 +477,20 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
                 />
                 <LocationMarker position={location} setPosition={setLocation} setAddress={setAddress} />
               </MapContainer>
-              <div className="absolute top-2 right-2 bg-white/95 px-2 py-1 rounded border border-slate-200 text-[10px] text-slate-500 z-20">
+              <div className="absolute top-2 right-2 bg-white/95 dark:bg-slate-850/95 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-[10px] text-slate-500 dark:text-slate-400 z-20 shadow-sm">
                 Click map to reposition pin
               </div>
             </div>
 
             {/* Ward Select */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-450 mb-1.5 uppercase tracking-wider">
                 Select Ward / வார்டு எண்
               </label>
               <select
                 value={ward}
                 onChange={(e) => setWard(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-tnblue-500 focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-tnblue-500 focus:outline-none"
               >
                 {Object.keys(WARD_OFFICERS).map((w) => (
                   <option key={w} value={w}>{w} - {WARD_OFFICERS[w]?.split(' ')[1] || 'Theni Core'}</option>
@@ -500,19 +500,19 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
           </div>
 
           {/* Form details (Category & Description) */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-md space-y-4">
-            <label className="block text-sm font-extrabold text-slate-800">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-md space-y-4 transition-colors duration-250">
+            <label className="block text-sm font-extrabold text-slate-800 dark:text-slate-200">
               3. Issue Category & Description / விவரம்
             </label>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-450 mb-1.5 uppercase tracking-wider">
                 Category / வகை
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-tnblue-500 focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-850 dark:text-slate-200 focus:ring-2 focus:ring-tnblue-500 focus:outline-none"
               >
                 {Object.entries(CATEGORIES).map(([key, val]) => (
                   <option key={key} value={key}>{val.label}</option>
@@ -522,14 +522,14 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
 
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-450 uppercase tracking-wider">
                   Description / விளக்கம் (Optional)
                 </label>
                 <button
                   type="button"
                   onClick={runManualAI}
                   disabled={!description}
-                  className="text-[10px] font-bold text-tngreen-700 hover:text-tngreen-800 flex items-center gap-0.5 disabled:opacity-50"
+                  className="text-[10px] font-bold text-tngreen-700 dark:text-tngreen-450 hover:text-tngreen-800 dark:hover:text-tngreen-300 flex items-center gap-0.5 disabled:opacity-50"
                 >
                   <Brain className="h-3 w-3" /> Re-run AI Category Predictor
                 </button>
@@ -539,7 +539,7 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
                 onChange={(e) => setDescription(e.target.value)}
                 rows="3"
                 placeholder="E.g., Large pothole in front of library. / நூலகத்திற்கு முன்பாக பெரிய சாலை பழுது ஏற்பட்டுள்ளது."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-tnblue-500 focus:outline-none placeholder:text-slate-400"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-850 dark:text-slate-200 focus:ring-2 focus:ring-tnblue-500 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
               ></textarea>
             </div>
           </div>
@@ -548,26 +548,26 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
 
         {/* Right Side: OTP Verification / Submit Control (1 column) */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-md space-y-4">
-            <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-1.5 pb-3 border-b border-slate-100">
-              <Smartphone className="text-tnblue-700" />
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-md space-y-4 transition-colors duration-250">
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5 pb-3 border-b border-slate-100 dark:border-slate-700">
+              <Smartphone className="text-tnblue-700 dark:text-tnblue-400" />
               Citizen Verification
             </h3>
             
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-450 dark:text-slate-400 leading-relaxed">
               We require a valid phone number to prevent spam and allow you to reopen the issue or confirm when fixed.
             </p>
 
             {!otpSent ? (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">Mobile Number</label>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-450 mb-1 uppercase tracking-wider">Mobile Number</label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     placeholder="Enter 10-digit number"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-tnblue-500 focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-850 dark:text-slate-100 focus:ring-2 focus:ring-tnblue-500 focus:outline-none"
                     maxLength="10"
                     required
                   />
@@ -584,7 +584,7 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
             ) : !otpVerified ? (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-450 mb-1 uppercase tracking-wider">
                     Enter OTP sent to {phone.slice(0,3)}***{phone.slice(-3)}
                   </label>
                   <input
@@ -592,11 +592,11 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
                     placeholder="Enter 4-digit OTP"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-tnblue-500 focus:outline-none text-center tracking-widest text-lg"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-850 dark:text-slate-100 focus:ring-2 focus:ring-tnblue-500 focus:outline-none text-center tracking-widest text-lg"
                     maxLength="4"
                     required
                   />
-                  <p className="text-[10px] text-tngreen-700 font-bold mt-1.5 text-center">
+                  <p className="text-[10px] text-tngreen-700 dark:text-tngreen-400 font-bold mt-1.5 text-center">
                     💡 Demo Mode: Enter "1234" to bypass
                   </p>
                 </div>
@@ -611,22 +611,22 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
                 <button
                   type="button"
                   onClick={() => setOtpSent(false)}
-                  className="w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600"
+                  className="w-full text-center text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-slate-600"
                 >
                   Change Phone Number
                 </button>
               </div>
             ) : (
-              <div className="bg-tngreen-50 border border-tngreen-250 rounded-xl p-3.5 flex items-center space-x-2">
+              <div className="bg-tngreen-50 dark:bg-tngreen-950/20 border border-tngreen-250 dark:border-tngreen-900/50 rounded-xl p-3.5 flex items-center space-x-2">
                 <Check className="h-5 w-5 text-tngreen-600 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs font-extrabold text-tngreen-800">Phone Verified</p>
-                  <p className="text-[10px] text-tngreen-700">+91 {phone.slice(0,3)}***{phone.slice(-3)}</p>
+                  <p className="text-xs font-extrabold text-tngreen-800 dark:text-tngreen-300">Phone Verified</p>
+                  <p className="text-[10px] text-tngreen-700 dark:text-tngreen-450">+91 {phone.slice(0,3)}***{phone.slice(-3)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => { setOtpVerified(false); setOtpSent(false); setOtpCode(""); }}
-                  className="text-[10px] font-bold text-slate-400 hover:text-red-500"
+                  className="text-[10px] font-bold text-slate-400 dark:text-slate-500 hover:text-red-500"
                 >
                   Reset
                 </button>
@@ -634,8 +634,8 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
             )}
           </div>
 
-          <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-xs text-slate-400 leading-relaxed space-y-2">
-            <h4 className="font-extrabold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 text-xs text-slate-400 dark:text-slate-500 leading-relaxed space-y-2 transition-colors duration-250">
+            <h4 className="font-extrabold text-slate-600 dark:text-slate-350 uppercase tracking-wider flex items-center gap-1">
               <ShieldAlert className="h-4 w-4" /> Duplicate Protection Policy
             </h4>
             <p>
@@ -649,7 +649,7 @@ export default function ReportIssuePage({ issues, setIssues, setCurrentScreen, s
             disabled={!photo || !otpVerified || isSubmitting}
             className={`w-full py-4 text-white text-lg font-black rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-0.5 ${
               !photo || !otpVerified || isSubmitting
-                ? 'bg-slate-350 cursor-not-allowed opacity-60 shadow-none hover:transform-none'
+                ? 'bg-slate-350 dark:bg-slate-700 cursor-not-allowed opacity-60 shadow-none hover:transform-none'
                 : 'bg-tngreen-600 hover:bg-tngreen-700 hover:shadow-xl'
             }`}
           >

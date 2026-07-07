@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -8,30 +9,30 @@ export default {
     extend: {
       colors: {
         tnblue: {
-          50: '#f0f7ff',
-          100: '#e0effe',
-          200: '#b9dffd',
-          300: '#7cc4fa',
-          400: '#36a5f5',
-          500: '#0c87eb',
-          600: '#006bcb',
-          700: '#0055a5', // Trustworthy TN Govt Blue
-          800: '#054987',
-          900: '#0a3e70',
-          950: '#07274a',
+          50: '#f7f6f7',
+          100: '#ecebec',
+          200: '#d5d4d5',
+          300: '#b2b1b3',
+          400: '#858385',
+          500: '#5f5e60',
+          600: '#484749',
+          700: '#353335', // Dark grey/charcoal
+          800: '#222022', // Primary Dark Charcoal Grey
+          900: '#1a181b',
+          950: '#111012',
         },
         tngreen: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d', // Agricultural Green
-          800: '#166534',
-          900: '#14532d',
-          950: '#052e16',
+          50: '#fafce8',
+          100: '#f1f7be',
+          200: '#e3ed84',
+          300: '#d1e141',
+          400: '#C3D809', // Primary Lime Green / Yellow-Green
+          500: '#b0c406',
+          600: '#899a03',
+          700: '#677501',
+          800: '#525e04',
+          900: '#464f09',
+          950: '#262d02',
         },
         tnaccent: {
           orange: '#ea580c', // Saffron/Orange for alerts & Assigned status

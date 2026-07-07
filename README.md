@@ -1,16 +1,36 @@
-# React + Vite
+# Smart Theni Civic Problem Solver
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**Smart Theni Civic Problem Solver** (தேனி நகராட்சி புகார் தீர்வு) is a public platform for citizen issue reporting and tracking in Theni Allinagaram municipal wards, Tamil Nadu. It enables residents to submit local concerns such as road damage, drainage blocks, and street light outages.
 
-Currently, two official plugins are available:
+## Features
+- **Easy Reporting:** Users can upload a photo, and the app automatically captures/determines coordinates.
+- **Smart Categorization:** Powered by AI classifications.
+- **Interactive Map Dashboard:** Live tracking of all issues and their resolution status.
+- **Officer Portal:** Dedicated portal for municipal ward officers to assign, track, and resolve complaints.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Developers & Contributors
+This application was created and developed by:
+- **Sivavishal**
+- **Nithish Krishna**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## Technical Stack
+- **Frontend:** React, Tailwind CSS, Leaflet (Maps), Lucide Icons
+- **Build Tool:** Vite
+- **Database/Backend:** Supabase (Real-time data sync, storage buckets, database tables)
+- **Linting & Code Quality:** Oxlint
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Running Locally
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Run development server:
+   ```bash
+   npm run dev
+   ```

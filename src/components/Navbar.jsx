@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Map, PlusCircle, UserCheck, Menu, X, Landmark } from 'lucide-react';
+import { ShieldAlert, Map, PlusCircle, UserCheck, Menu, X, Landmark, Sun, Moon } from 'lucide-react';
 
-export default function Navbar({ currentScreen, setCurrentScreen }) {
+export default function Navbar({ currentScreen, setCurrentScreen, theme, setTheme }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
@@ -31,30 +31,46 @@ export default function Navbar({ currentScreen, setCurrentScreen }) {
             </div>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentScreen === item.id || (item.id === 'dashboard' && currentScreen === 'detail');
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentScreen(item.id)}
-                  className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-all duration-200 ${
-                    isActive
-                      ? 'bg-tngreen-700 text-white shadow-md'
-                      : 'text-tnblue-100 hover:bg-tnblue-700 hover:text-white'
-                  }`}
-                >
-                  <Icon className="h-4.5 w-4.5" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+          {/* Desktop Navigation & Theme Toggle */}
+          <div className="hidden md:flex items-center space-x-3">
+            <div className="flex space-x-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentScreen === item.id || (item.id === 'dashboard' && currentScreen === 'detail');
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setCurrentScreen(item.id)}
+                    className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-all duration-200 ${
+                      isActive
+                        ? 'bg-tngreen-700 text-white shadow-md'
+                        : 'text-tnblue-100 hover:bg-tnblue-700 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 rounded-full text-tnblue-100 hover:bg-tnblue-700 hover:text-white transition-colors focus:outline-none"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5" />}
+            </button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          {/* Mobile Menu Button & Theme Toggle */}
+          <div className="flex items-center space-x-2 md:hidden">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 rounded-full text-tnblue-100 hover:bg-tnblue-700 hover:text-white transition-colors focus:outline-none"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5" />}
+            </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-tnblue-100 hover:text-white hover:bg-tnblue-700 focus:outline-none"

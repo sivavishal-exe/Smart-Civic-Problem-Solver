@@ -14,6 +14,24 @@ function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [selectedIssueId, setSelectedIssueId] = useState(null);
   const [issues, setIssues] = useState(seedIssues);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   // 1. Fetch Issues from Supabase on mount (with automatic seeding if db is empty)
   useEffect(() => {
@@ -282,9 +300,9 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
+    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-250">
       {/* Navigation Header */}
-      <Navbar currentScreen={currentScreen} setCurrentScreen={setCurrentScreen} />
+      <Navbar currentScreen={currentScreen} setCurrentScreen={setCurrentScreen} theme={theme} setTheme={setTheme} />
 
       {/* Main Content Area */}
       <main className="flex-grow">
@@ -340,7 +358,7 @@ function App() {
               <strong>Email:</strong> commr.theni@tn.gov.in
             </p>
             <div className="pt-2 border-t border-slate-800 text-[10px] text-slate-500">
-              © {new Date().getFullYear()} Theni Municipal Corporation. All rights reserved. Developed for public administration.
+              © {new Date().getFullYear()} Theni Municipal Corporation. All rights reserved. Developed by Sivavishal and Nithish Krishna for public administration.
             </div>
           </div>
         </div>
